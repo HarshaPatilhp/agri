@@ -14,7 +14,7 @@ The complete workflow:
 Enter agricultural data → Validate → Predict → Display Yield → Review Inputs → Make Another Prediction
 ```
 
-The UI is fully functional using a **mock prediction service**. When the Python ML backend is ready, a single code change in `src/services/predictionService.js` connects the real API — no UI changes required.
+The UI sends validated input to the Python prediction backend and displays its `predicted_yield` response.
 
 ---
 
@@ -45,7 +45,7 @@ src/
 │   └── IrrigationControl.jsx # Yes/No segmented radio control
 │
 ├── services/
-│   └── predictionService.js  # API abstraction layer (mock → real)
+│   └── predictionService.js  # Backend API integration
 │
 ├── constants/
 │   └── predictionOptions.js  # Crop types & soil types config
@@ -81,19 +81,7 @@ The app will be available at `http://localhost:5173`.
 
 ---
 
-## Mock API
-
-Currently, `src/services/predictionService.js` uses a **mock implementation** that:
-
-- Simulates a network delay of ~800–1400 ms
-- Returns a mock `predicted_yield` value (varies slightly based on cultivated area)
-- Requires no backend or network connection
-
-This allows the complete frontend workflow to be demonstrated without any backend.
-
----
-
-## Future API Integration
+## Backend API Integration
 
 When the Python ML backend is ready:
 
@@ -107,14 +95,14 @@ POST /predict
 
 ```json
 {
-  "crop_type": "Rice",
-  "rainfall": 1200,
-  "temperature": 27.5,
-  "humidity": 72,
-  "soil_type": "Loamy",
-  "fertilizer_usage": 150,
-  "cultivated_area": 5.5,
-  "irrigation": true
+  "crop": "Rice",
+  "crop_year": 2020,
+  "season": "Kharif",
+  "state": "Karnataka",
+  "area": 5000,
+  "annual_rainfall": 1200,
+  "fertilizer": 150000,
+  "pesticide": 5000
 }
 ```
 
@@ -126,27 +114,13 @@ POST /predict
 }
 ```
 
-### How to connect
-
-In `src/services/predictionService.js`, replace the mock body with:
-
-```js
-const response = await fetch(`${API_BASE_URL}/predict`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(payload),
-});
-if (!response.ok) throw new Error(`API error: ${response.status}`);
-return response.json();
-```
-
-The commented-out code is already present in the file — just uncomment it.
-
-Set the API base URL via an environment variable:
+Set the API base URL via `.env`:
 
 ```
 VITE_API_BASE_URL=http://localhost:8000
 ```
+
+The frontend sends `POST http://localhost:8000/predict` and displays the returned `predicted_yield` and `unit`.
 
 > **Note:** The backend is intentionally not included in this project. This repository is frontend-only.
 
@@ -156,11 +130,11 @@ VITE_API_BASE_URL=http://localhost:8000
 
 | Field | Type | Constraints |
 |---|---|---|
-| Crop Type | Dropdown | Required |
-| Rainfall | Number | Required, ≥ 0 mm |
-| Temperature | Number | Required |
-| Humidity | Number | Required, 0–100% |
-| Soil Type | Dropdown | Required |
-| Fertilizer Usage | Number | Required, ≥ 0 kg/ha |
-| Cultivated Area | Number | Required, > 0 ha |
-| Irrigation | Boolean (Yes/No) | Required |
+| Crop | Dropdown | One of the 55 dataset crops |
+| Crop Year | Dropdown | 1997–2020 |
+| Season | Dropdown | Whole Year, Kharif, Rabi, Autumn, Summer, Winter |
+| State | Dropdown | One of the 30 dataset states/UTs |
+| Area | Number | 0.5–50,808,100 |
+| Annual Rainfall | Number | 301.3–6,552.7 mm |
+| Fertilizer | Number | 54.17–4,835,407,000 |
+| Pesticide | Number | 0.09–15,750,510 |

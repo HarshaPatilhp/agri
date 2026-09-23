@@ -240,6 +240,13 @@ button, input, select, textarea {
   gap: var(--spacing-xs);
 }
 
+.field-description {
+  color: var(--color-text-muted);
+  font-size: 0.6875rem;
+  line-height: 1.35;
+  min-height: 1.85em;
+}
+
 .field-unit {
   font-size: 0.75rem;
   font-weight: 500;

@@ -56,7 +56,7 @@ export function Dashboard() {
 
       {/* ── Footer ── */}
       <footer className="dashboard-footer">
-        <p>Agricultural Yield Prediction Dashboard &mdash; Mock API active. Connect <code>POST /predict</code> to go live.</p>
+        <p>Agricultural Yield Prediction Dashboard &mdash; Connected to the prediction API.</p>
       </footer>
     </div>
   );

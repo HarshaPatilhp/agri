@@ -6,11 +6,13 @@ import React from 'react';
 export function FormInput({
   id,
   label,
+  description,
   unit,
   type = 'number',
   placeholder,
   value,
   onChange,
+  onBlur,
   error,
   min,
   max,
@@ -23,6 +25,7 @@ export function FormInput({
         {label}
         {unit && <span className="field-unit">{unit}</span>}
       </label>
+      {description && <span className="field-description">{description}</span>}
       <input
         id={id}
         type={type}
@@ -31,6 +34,7 @@ export function FormInput({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
         min={min}
         max={max}
         step={step}

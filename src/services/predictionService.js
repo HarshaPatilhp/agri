@@ -3,58 +3,31 @@
  *
  * Abstraction layer between the UI and the prediction backend.
  *
- * Currently uses a mock response. When the Python REST API is ready,
- * replace the mock body with a real fetch/axios call — the UI stays unchanged.
- *
- * Future API contract:
+ * Backend API contract:
  *   POST /predict
  *   Body: {
- *     crop_type: string,
- *     rainfall: number,
- *     temperature: number,
- *     humidity: number,
- *     soil_type: string,
- *     fertilizer_usage: number,
- *     cultivated_area: number,
- *     irrigation: boolean,
+ *     crop: string, crop_year: number, season: string, state: string,
+ *     area: number, annual_rainfall: number, fertilizer: number, pesticide: number,
  *   }
- *   Response: { predicted_yield: number }
+ *   Response: { predicted_yield: number, unit?: string }
  */
 
-// Base URL for the future REST API
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 /**
- * Converts camelCase form data to the snake_case API contract.
+ * Converts form state to the exact prediction API contract.
  */
 function toApiPayload(formData) {
   return {
-    crop_type: formData.cropType,
-    rainfall: Number(formData.rainfall),
-    temperature: Number(formData.temperature),
-    humidity: Number(formData.humidity),
-    soil_type: formData.soilType,
-    fertilizer_usage: Number(formData.fertilizerUsage),
-    cultivated_area: Number(formData.cultivatedArea),
-    irrigation: formData.irrigation,
+    crop: formData.crop,
+    crop_year: Number(formData.cropYear),
+    season: formData.season,
+    state: formData.state,
+    area: Number(formData.area),
+    annual_rainfall: Number(formData.annualRainfall),
+    fertilizer: Number(formData.fertilizer),
+    pesticide: Number(formData.pesticide),
   };
-}
-
-/**
- * Mock implementation — simulates network latency and returns a static prediction.
- * Replace this function body with a real fetch() call when the backend is ready.
- */
-async function mockPredictYield(payload) {
-  // Simulate network delay (800 – 1400 ms)
-  const delay = 800 + Math.random() * 600;
-  await new Promise((resolve) => setTimeout(resolve, delay));
-
-  // Deterministic-looking mock: vary slightly based on cultivated area
-  const base = 4.72;
-  const variation = (payload.cultivated_area % 1) * 0.5;
-  const predicted_yield = parseFloat((base + variation).toFixed(2));
-
-  return { predicted_yield };
 }
 
 /**
@@ -65,17 +38,33 @@ async function mockPredictYield(payload) {
  */
 export async function predictYield(formData) {
   const payload = toApiPayload(formData);
+  const response = await fetch(`${API_BASE_URL}/predict`, {
+    method: 'POST',
+    headers: {
+      Accept: '*/*',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
 
-  // ─── MOCK MODE (active until backend is connected) ──────────────────────────
-  return mockPredictYield(payload);
-  // ─── REAL API MODE (uncomment when backend is ready) ────────────────────────
-  // const response = await fetch(`${API_BASE_URL}/predict`, {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify(payload),
-  // });
-  // if (!response.ok) {
-  //   throw new Error(`Prediction API error: ${response.status}`);
-  // }
-  // return response.json();
+  if (!response.ok) {
+    let message = `Prediction API error: ${response.status}`;
+    try {
+      const errorBody = await response.json();
+      if (Array.isArray(errorBody.detail)) {
+        message = errorBody.detail.map((error) => error.msg).filter(Boolean).join(' ');
+      } else if (typeof errorBody.detail === 'string') {
+        message = errorBody.detail;
+      }
+    } catch {
+      // Keep the status-based message when the server has no JSON error body.
+    }
+    throw new Error(message);
+  }
+
+  const result = await response.json();
+  if (typeof result.predicted_yield !== 'number' || !Number.isFinite(result.predicted_yield)) {
+    throw new Error('The prediction response did not contain a valid predicted_yield.');
+  }
+  return result;
 }

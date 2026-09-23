@@ -5,14 +5,14 @@ import React from 'react';
  */
 export function InputSummary({ formData }) {
   const rows = [
-    { key: 'Crop Type',       value: formData.cropType },
-    { key: 'Rainfall',        value: `${formData.rainfall} mm` },
-    { key: 'Temperature',     value: `${formData.temperature} °C` },
-    { key: 'Humidity',        value: `${formData.humidity}%` },
-    { key: 'Soil Type',       value: formData.soilType },
-    { key: 'Fertilizer',      value: `${formData.fertilizerUsage} kg/ha` },
-    { key: 'Cultivated Area', value: `${formData.cultivatedArea} ha` },
-    { key: 'Irrigation',      value: formData.irrigation ? 'Yes' : 'No' },
+    { key: 'Crop',             value: formData.crop },
+    { key: 'Crop Year',        value: formData.cropYear },
+    { key: 'Season',           value: formData.season },
+    { key: 'State',            value: formData.state },
+    { key: 'Area',             value: formData.area },
+    { key: 'Annual Rainfall',  value: `${formData.annualRainfall} mm` },
+    { key: 'Fertilizer',       value: formData.fertilizer },
+    { key: 'Pesticide',        value: formData.pesticide },
   ];
 
   return (

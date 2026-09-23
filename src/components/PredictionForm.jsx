@@ -1,20 +1,19 @@
 import React, { useState } from 'react';
 import { FormInput } from './FormInput';
 import { SelectInput } from './SelectInput';
-import { IrrigationControl } from './IrrigationControl';
-import { CROP_TYPES, SOIL_TYPES } from '../constants/predictionOptions';
+import { CROP_TYPES, CROP_YEARS, SEASONS, STATES, FIELD_RANGES } from '../constants/predictionOptions';
 import { validatePredictionForm } from '../utils/validation';
 import { predictYield } from '../services/predictionService';
 
 const INITIAL_FORM = {
-  cropType: '',
-  rainfall: '',
-  temperature: '',
-  humidity: '',
-  soilType: '',
-  fertilizerUsage: '',
-  cultivatedArea: '',
-  irrigation: null,
+  crop: '',
+  cropYear: '',
+  season: '',
+  state: '',
+  area: '',
+  annualRainfall: '',
+  fertilizer: '',
+  pesticide: '',
 };
 
 /**
@@ -31,11 +30,19 @@ export function PredictionForm({ onSuccess }) {
 
   function updateField(field) {
     return (value) => {
-      setFormData((prev) => ({ ...prev, [field]: value }));
-      // Clear per-field error on change
-      if (errors[field]) {
-        setErrors((prev) => ({ ...prev, [field]: '' }));
-      }
+      setFormData((prev) => {
+        const nextData = { ...prev, [field]: value };
+        const fieldError = validatePredictionForm(nextData)[field] || '';
+        setErrors((currentErrors) => ({ ...currentErrors, [field]: fieldError }));
+        return nextData;
+      });
+    };
+  }
+
+  function validateField(field) {
+    return () => {
+      const fieldErrors = validatePredictionForm(formData);
+      setErrors((prev) => ({ ...prev, [field]: fieldErrors[field] || '' }));
     };
   }
 
@@ -57,8 +64,8 @@ export function PredictionForm({ onSuccess }) {
     try {
       const result = await predictYield(formData);
       onSuccess({ result, formData });
-    } catch {
-      setApiError('Unable to generate prediction. Please try again.');
+    } catch (error) {
+      setApiError(error.message || 'Unable to generate prediction. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -70,103 +77,124 @@ export function PredictionForm({ onSuccess }) {
         <h2 className="section-title">Prediction Inputs</h2>
 
         <div className="form-grid">
-          {/* Crop Type */}
+          {/* Crop */}
           <SelectInput
-            id="cropType"
-            label="Crop Type"
+            id="crop"
+            label="Crop"
+            description="The crop grown in the selected season and state."
             options={CROP_TYPES}
-            placeholder="Select crop type"
-            value={formData.cropType}
-            onChange={updateField('cropType')}
-            error={errors.cropType}
+            placeholder="Select crop"
+            value={formData.crop}
+            onChange={updateField('crop')}
+            onBlur={validateField('crop')}
+            error={errors.crop}
           />
 
-          {/* Soil Type */}
+          {/* Crop Year */}
           <SelectInput
-            id="soilType"
-            label="Soil Type"
-            options={SOIL_TYPES}
-            placeholder="Select soil type"
-            value={formData.soilType}
-            onChange={updateField('soilType')}
-            error={errors.soilType}
+            id="cropYear"
+            label="Crop Year"
+            description="The harvest year; choose a year from 1997 to 2020."
+            options={CROP_YEARS}
+            placeholder="Select crop year"
+            value={formData.cropYear}
+            onChange={updateField('cropYear')}
+            onBlur={validateField('cropYear')}
+            error={errors.cropYear}
           />
 
-          {/* Rainfall */}
+          {/* Season */}
+          <SelectInput
+            id="season"
+            label="Season"
+            description="The growing season when the crop was cultivated."
+            options={SEASONS}
+            placeholder="Select season"
+            value={formData.season}
+            onChange={updateField('season')}
+            onBlur={validateField('season')}
+            error={errors.season}
+          />
+
+          {/* State */}
+          <SelectInput
+            id="state"
+            label="State"
+            description="The Indian state or UT where the crop was grown."
+            options={STATES}
+            placeholder="Select state"
+            value={formData.state}
+            onChange={updateField('state')}
+            onBlur={validateField('state')}
+            error={errors.state}
+          />
+
+          {/* Area */}
           <FormInput
-            id="rainfall"
-            label="Rainfall"
+            id="area"
+            label="Area"
+            unit="ha"
+            description="The cultivated land area, measured in hectares."
+            type="number"
+            placeholder="e.g. 5000"
+            min={FIELD_RANGES.area.min}
+            max={FIELD_RANGES.area.max}
+            step="any"
+            value={formData.area}
+            onChange={updateField('area')}
+            onBlur={validateField('area')}
+            error={errors.area}
+          />
+
+          {/* Annual Rainfall */}
+          <FormInput
+            id="annualRainfall"
+            label="Annual Rainfall"
+            description="The total rainfall received during the year, in millimetres."
             unit="mm"
             type="number"
             placeholder="e.g. 1200"
-            min="0"
+            min={FIELD_RANGES.annualRainfall.min}
+            max={FIELD_RANGES.annualRainfall.max}
             step="any"
-            value={formData.rainfall}
-            onChange={updateField('rainfall')}
-            error={errors.rainfall}
+            value={formData.annualRainfall}
+            onChange={updateField('annualRainfall')}
+            onBlur={validateField('annualRainfall')}
+            error={errors.annualRainfall}
           />
 
-          {/* Temperature */}
+          {/* Fertilizer */}
           <FormInput
-            id="temperature"
-            label="Temperature"
-            unit="°C"
+            id="fertilizer"
+            label="Fertilizer"
+            unit="kg"
+            description="The amount of fertilizer applied to the crop."
             type="number"
-            placeholder="e.g. 27.5"
-            step="0.1"
-            value={formData.temperature}
-            onChange={updateField('temperature')}
-            error={errors.temperature}
-          />
-
-          {/* Humidity */}
-          <FormInput
-            id="humidity"
-            label="Humidity"
-            unit="%"
-            type="number"
-            placeholder="0 – 100"
-            min="0"
-            max="100"
+            placeholder="e.g. 150000"
+            min={FIELD_RANGES.fertilizer.min}
+            max={FIELD_RANGES.fertilizer.max}
             step="any"
-            value={formData.humidity}
-            onChange={updateField('humidity')}
-            error={errors.humidity}
+            value={formData.fertilizer}
+            onChange={updateField('fertilizer')}
+            onBlur={validateField('fertilizer')}
+            error={errors.fertilizer}
           />
 
-          {/* Fertilizer Usage */}
+          {/* Pesticide */}
           <FormInput
-            id="fertilizerUsage"
-            label="Fertilizer Usage"
-            unit="kg/ha"
+            id="pesticide"
+            label="Pesticide"
+            unit="kg"
+            description="The amount of pesticide used for the crop."
             type="number"
-            placeholder="e.g. 150"
-            min="0"
+            placeholder="e.g. 5000"
+            min={FIELD_RANGES.pesticide.min}
+            max={FIELD_RANGES.pesticide.max}
             step="any"
-            value={formData.fertilizerUsage}
-            onChange={updateField('fertilizerUsage')}
-            error={errors.fertilizerUsage}
-          />
-
-          {/* Cultivated Area */}
-          <FormInput
-            id="cultivatedArea"
-            label="Cultivated Area"
-            unit="ha"
-            type="number"
-            placeholder="e.g. 5.5"
-            min="0.01"
-            step="any"
-            value={formData.cultivatedArea}
-            onChange={updateField('cultivatedArea')}
-            error={errors.cultivatedArea}
-          />
-
-          {/* Irrigation */}
-          <IrrigationControl
-            value={formData.irrigation}
-            onChange={updateField('irrigation')}
-            error={errors.irrigation}
+            value={formData.pesticide}
+            onChange={updateField('pesticide')}
+            onBlur={validateField('pesticide')}
+            error={errors.pesticide}
           />
         </div>
 

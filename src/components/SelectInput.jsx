@@ -3,18 +3,20 @@ import React from 'react';
 /**
  * SelectInput — reusable labeled dropdown with error display.
  */
-export function SelectInput({ id, label, options, value, onChange, error, placeholder }) {
+export function SelectInput({ id, label, description, options, value, onChange, onBlur, error, placeholder }) {
   return (
     <div className="form-field">
       <label htmlFor={id} className="form-label">
         {label}
       </label>
+      {description && <span className="field-description">{description}</span>}
       <div className="select-wrapper">
         <select
           id={id}
           className={`form-select${error ? ' input-error' : ''}`}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
           aria-describedby={error ? `${id}-error` : undefined}
           aria-invalid={!!error}
         >
